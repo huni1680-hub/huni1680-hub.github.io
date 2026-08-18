@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>승진게임 - 인턴에서 회장까지</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>인턴에서 회장까지</h1>
+    </header>
+
+    <div class="hud">
+      <div class="stat-box">
+        <div class="stat-label">스코어</div>
+        <div id="score" class="stat-value">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">최고 점수</div>
+        <div id="best" class="stat-value">0</div>
+      </div>
+      <div class="stat-box next-box">
+        <div class="stat-label">다음</div>
+        <canvas id="nextCanvas" width="64" height="64"></canvas>
+      </div>
+    </div>
+
+    <div id="gameWrap">
+      <canvas id="gameCanvas"></canvas>
+      <div id="gameOverOverlay" class="hidden">
+        <div class="overlay-card">
+          <h2>게임 종료</h2>
+          <p>최종 점수: <span id="finalScore">0</span></p>
+          <button id="restartBtn">다시 하기</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint">클릭/탭으로 좌우 이동, 다시 클릭/탭하면 떨어뜨립니다</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

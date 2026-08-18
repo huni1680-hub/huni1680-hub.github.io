@@ -1,0 +1,124 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #F5A623;
+  background: linear-gradient(180deg, #FFB74D, #F5A623);
+  font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+
+#app {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+header h1 {
+  color: #fff;
+  font-size: 20px;
+  margin: 4px 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.hud {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+}
+
+.stat-box {
+  flex: 1;
+  background: rgba(255,255,255,0.85);
+  border-radius: 12px;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #8a5a1e;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #4a2f0d;
+}
+
+.next-box {
+  flex: 0 0 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#gameWrap {
+  position: relative;
+  width: 100%;
+}
+
+#gameCanvas {
+  width: 100%;
+  display: block;
+  background: #FBE4B8;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 6px #E8A85C;
+  touch-action: none;
+}
+
+.hint {
+  color: #fff8ee;
+  font-size: 13px;
+  opacity: 0.85;
+  margin: 0;
+}
+
+#gameOverOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#gameOverOverlay.hidden {
+  display: none;
+}
+
+.overlay-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px 28px;
+  text-align: center;
+}
+
+.overlay-card h2 {
+  margin: 0 0 8px;
+  color: #4a2f0d;
+}
+
+#restartBtn {
+  margin-top: 12px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #F5A623;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#restartBtn:active {
+  transform: scale(0.97);
+}
