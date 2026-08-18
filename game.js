@@ -331,9 +331,9 @@ function drawFace(ctx2, mood, cx, cy, r) {
 
 function drawAccessory(ctx2, type, cx, cy, r) {
   ctx2.save();
-  ctx2.strokeStyle = 'rgba(0,0,0,0.6)';
-  ctx2.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx2.lineWidth = Math.max(1, r * 0.05);
+  ctx2.strokeStyle = 'rgba(0,0,0,0.85)';
+  ctx2.fillStyle = '#ffffff';
+  ctx2.lineWidth = Math.max(1.5, r * 0.06);
 
   if (type === 'badge') {
     // 사원증 목걸이
@@ -449,6 +449,23 @@ function drawAccessory(ctx2, type, cx, cy, r) {
   ctx2.restore();
 }
 
+// 배경 밝기에 따라 검정/흰색 텍스트를 자동으로 골라 항상 읽히게 함
+function hexLuminance(hex) {
+  const n = hex.replace('#', '');
+  const r = parseInt(n.substr(0, 2), 16);
+  const g = parseInt(n.substr(2, 2), 16);
+  const b = parseInt(n.substr(4, 2), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+function textColorsFor(tierData) {
+  const hex = tierData.metallic ? tierData.metallic[1] : tierData.color;
+  const light = hexLuminance(hex) > 150;
+  return light
+    ? { fill: '#241a08', outline: 'rgba(255,255,255,0.9)' }
+    : { fill: '#ffffff', outline: 'rgba(0,0,0,0.55)' };
+}
+
 function pieceFill(ctx2, tierData, x, y, r) {
   if (tierData.metallic) {
     const g = ctx2.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
@@ -471,12 +488,17 @@ function drawPiece(ctx2, tierData, r, x, y, scale = 1) {
   ctx2.stroke();
 
   drawFace(ctx2, tierData.mood, x, y, rr);
-  drawAccessory(ctx2, tierData.accessory, x, y, rr);
+  drawAccessory(ctx2, tierData.accessory, x, y, rr * 1.35);
 
-  ctx2.fillStyle = 'rgba(0,0,0,0.75)';
-  ctx2.font = `700 ${Math.max(10, rr * 0.4)}px -apple-system, sans-serif`;
+  const { fill, outline } = textColorsFor(tierData);
+  ctx2.font = `800 ${Math.max(11, rr * 0.42)}px -apple-system, sans-serif`;
   ctx2.textAlign = 'center';
   ctx2.textBaseline = 'middle';
+  ctx2.lineWidth = Math.max(2, rr * 0.14);
+  ctx2.strokeStyle = outline;
+  ctx2.lineJoin = 'round';
+  ctx2.strokeText(tierData.name, x, y + rr * 0.62);
+  ctx2.fillStyle = fill;
   ctx2.fillText(tierData.name, x, y + rr * 0.62);
 }
 
