@@ -487,8 +487,18 @@ function drawPiece(ctx2, tierData, r, x, y, scale = 1) {
   ctx2.strokeStyle = 'rgba(0,0,0,0.15)';
   ctx2.stroke();
 
+  // 얼굴/액세서리가 원 밖으로 삐져나가지 않도록 원 모양으로 잘라냄
+  // (회장의 왕관만 일부러 위로 나오는 디자인이라 예외)
+  const clipToBody = tierData.accessory !== 'crown';
+  ctx2.save();
+  if (clipToBody) {
+    ctx2.beginPath();
+    ctx2.arc(x, y, rr, 0, Math.PI * 2);
+    ctx2.clip();
+  }
   drawFace(ctx2, tierData.mood, x, y, rr);
   drawAccessory(ctx2, tierData.accessory, x, y, rr * 1.35);
+  ctx2.restore();
 
   const { fill, outline } = textColorsFor(tierData);
   ctx2.font = `800 ${Math.max(11, rr * 0.42)}px -apple-system, sans-serif`;
