@@ -529,6 +529,21 @@ function drawPiece(ctx2, tierData, r, x, y, scale = 1) {
   ctx2.fillText(tierData.name, x, y + rr * 0.62);
 }
 
+// 조준선이 바닥 또는 가장 먼저 닿는 조각의 표면에서 끊기도록 y좌표 계산
+function guideStopY(holdingX, holdingR) {
+  let stopY = CANVAS_H - WALL_THICK;
+  for (const body of Composite.allBodies(world)) {
+    if (body.isStatic) continue;
+    const dx = body.position.x - holdingX;
+    const sumR = body.circleRadius + holdingR;
+    if (Math.abs(dx) >= sumR) continue;
+    const dy = Math.sqrt(sumR * sumR - dx * dx);
+    const contactY = body.position.y - dy;
+    if (contactY < stopY) stopY = contactY;
+  }
+  return stopY;
+}
+
 // ---- 렌더 루프 ----
 
 function render() {
@@ -543,17 +558,22 @@ function render() {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // 조준선: 들고 있는 조각이 떨어질 경로를 점선으로 미리 보여줌
+  // 조준선: 들고 있는 조각이 떨어질 경로를 점선으로 미리 보여주고,
+  // 실제로 부딪힐 조각/바닥 지점에서 정확히 끊기게 함
   if (holding && !gameOver) {
-    const startY = radiusOf(holding.tier) * 2 + 8;
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 8]);
-    ctx.beginPath();
-    ctx.moveTo(holding.x, startY);
-    ctx.lineTo(holding.x, CANVAS_H - WALL_THICK);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    const holdR = radiusOf(holding.tier);
+    const startY = holdR * 2 + 8;
+    const stopY = guideStopY(holding.x, holdR);
+    if (stopY > startY) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([7, 9]);
+      ctx.beginPath();
+      ctx.moveTo(holding.x, startY);
+      ctx.lineTo(holding.x, stopY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
   }
 
   for (const body of Composite.allBodies(world)) {
