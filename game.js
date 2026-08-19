@@ -543,6 +543,19 @@ function render() {
   ctx.stroke();
   ctx.setLineDash([]);
 
+  // 조준선: 들고 있는 조각이 떨어질 경로를 점선으로 미리 보여줌
+  if (holding && !gameOver) {
+    const startY = radiusOf(holding.tier) * 2 + 8;
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 8]);
+    ctx.beginPath();
+    ctx.moveTo(holding.x, startY);
+    ctx.lineTo(holding.x, CANVAS_H - WALL_THICK);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   for (const body of Composite.allBodies(world)) {
     if (body.isStatic) continue;
     const tierData = TIERS[body.tier];
