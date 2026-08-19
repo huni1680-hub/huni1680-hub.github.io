@@ -112,18 +112,35 @@ function canvasX(clientX) {
   return (clientX - rect.left) * (CANVAS_W / rect.width);
 }
 
-canvas.addEventListener('pointermove', (e) => {
-  if (!holding || dropLocked || gameOver) return;
+let isDragging = false;
+
+function updateHoldingX(clientX) {
   const r = radiusOf(holding.tier);
-  const x = canvasX(e.clientX);
+  const x = canvasX(clientX);
   holding.x = Math.max(r + WALL_THICK / 2, Math.min(CANVAS_W - r - WALL_THICK / 2, x));
+}
+
+// 손을 대면 그 위치로 이동만 하고, 누른 채로 끌다가 뗄 때 떨어뜨림 (모바일 터치 기준)
+canvas.addEventListener('pointerdown', (e) => {
+  if (gameOver || !holding || dropLocked) return;
+  isDragging = true;
+  canvas.setPointerCapture(e.pointerId);
+  updateHoldingX(e.clientX);
 });
 
-canvas.addEventListener('pointerdown', (e) => {
-  if (gameOver) return;
-  if (!holding) return;
-  if (dropLocked) return;
-  dropPiece();
+canvas.addEventListener('pointermove', (e) => {
+  if (!isDragging || !holding || dropLocked || gameOver) return;
+  updateHoldingX(e.clientX);
+});
+
+canvas.addEventListener('pointerup', () => {
+  if (!isDragging) return;
+  isDragging = false;
+  if (holding && !dropLocked && !gameOver) dropPiece();
+});
+
+canvas.addEventListener('pointercancel', () => {
+  isDragging = false;
 });
 
 function dropPiece() {
