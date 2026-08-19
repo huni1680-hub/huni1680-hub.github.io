@@ -1,0 +1,14 @@
+{
+  "name": "승진게임 - 인턴에서 회장까지",
+  "short_name": "승진게임",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F5A623",
+  "theme_color": "#F5A623",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
