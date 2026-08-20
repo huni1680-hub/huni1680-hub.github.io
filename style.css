@@ -159,3 +159,18 @@ header h1 {
 #restartBtn:active {
   transform: scale(0.97);
 }
+
+.site-footer {
+  color: #fff8ee;
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+.site-footer a {
+  color: #fff8ee;
+}
+
+.site-footer span {
+  margin: 0 6px;
+}
