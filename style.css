@@ -20,11 +20,91 @@ body {
   gap: 12px;
 }
 
+header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+
 header h1 {
   color: #fff;
   font-size: 20px;
   margin: 4px 0;
   text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.mute-btn {
+  position: absolute;
+  right: 0;
+  border: none;
+  background: rgba(255,255,255,0.85);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.fever-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.85);
+  border-radius: 12px;
+  padding: 8px 12px;
+  transition: background 0.2s;
+}
+
+.fever-wrap.active {
+  background: #3a2308;
+  animation: feverWrapGlow 0.4s infinite alternate;
+}
+
+@keyframes feverWrapGlow {
+  from { box-shadow: 0 0 10px 2px rgba(255,140,0,0.6); }
+  to { box-shadow: 0 0 26px 8px rgba(255,190,0,0.95); }
+}
+
+.fever-label {
+  color: #8a5a1e;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.fever-wrap.active .fever-label {
+  color: #FFD54F;
+}
+
+.fever-track {
+  flex: 1;
+  height: 16px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.25);
+}
+
+.fever-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #FFD54F, #FF7043);
+  transition: width 0.15s ease-out;
+}
+
+.fever-wrap.active .fever-fill {
+  background: linear-gradient(90deg, #FFEB3B, #FF3D00);
+  box-shadow: 0 0 18px 4px rgba(255,200,0,1);
+  animation: feverPulse 0.4s infinite alternate;
+}
+
+@keyframes feverPulse {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.8); }
 }
 
 .hud {

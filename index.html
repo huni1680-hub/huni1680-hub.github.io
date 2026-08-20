@@ -15,6 +15,7 @@
   <div id="app">
     <header>
       <h1>인턴에서 회장까지</h1>
+      <button id="muteBtn" class="mute-btn" aria-label="소리 켜기/끄기">🔊</button>
     </header>
 
     <div class="hud">
@@ -30,6 +31,11 @@
         <div class="stat-label">다음</div>
         <canvas id="nextCanvas" width="64" height="64"></canvas>
       </div>
+    </div>
+
+    <div id="feverWrap" class="fever-wrap">
+      <div id="feverLabel" class="fever-label">피버</div>
+      <div class="fever-track"><div id="feverFill" class="fever-fill"></div></div>
     </div>
 
     <div id="gameWrap">
@@ -113,6 +119,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
-  <script src="game.js?v=4"></script>
+  <script src="game.js?v=11"></script>
 </body>
 </html>

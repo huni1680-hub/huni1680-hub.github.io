@@ -126,6 +126,7 @@ canvas.addEventListener('pointerdown', (e) => {
   isDragging = true;
   canvas.setPointerCapture(e.pointerId);
   updateHoldingX(e.clientX);
+  if (soundEnabled) { ensureAudioCtx(); startBgm(); }
 });
 
 canvas.addEventListener('pointermove', (e) => {
@@ -145,6 +146,7 @@ canvas.addEventListener('pointercancel', () => {
 
 function dropPiece() {
   dropLocked = true;
+  playDropSound(holding.tier);
   const body = makeBody(holding.tier, holding.x, radiusOf(holding.tier) + 4);
   World.add(world, body);
   holding = null;
@@ -152,6 +154,184 @@ function dropPiece() {
     dropLocked = false;
     spawnHolding();
   }, DROP_COOLDOWN_MS);
+}
+
+// ---- 사운드 ----
+
+let audioCtx = null;
+
+function ensureAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playDropSound(tier) {
+  if (!soundEnabled) return;
+  ensureAudioCtx();
+  const start = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  const freq = 260 - tier * 10;
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, start);
+  osc.frequency.exponentialRampToValueAtTime(freq * 0.6, start + 0.06);
+
+  gain.gain.setValueAtTime(0.15, start);
+  gain.gain.exponentialRampToValueAtTime(0.001, start + 0.08);
+
+  osc.start(start);
+  osc.stop(start + 0.08);
+}
+
+function playMergeSound(tier) {
+  if (!soundEnabled) return;
+  ensureAudioCtx();
+
+  const start = audioCtx.currentTime + Math.random() * 0.03;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  const baseFreq = (220 + tier * 40) * (1 + (Math.random() - 0.5) * 0.06);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(baseFreq, start);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * 2, start + 0.12);
+
+  gain.gain.setValueAtTime(0.25, start);
+  gain.gain.exponentialRampToValueAtTime(0.001, start + 0.18);
+
+  osc.start(start);
+  osc.stop(start + 0.18);
+}
+
+function playFeverStartSound() {
+  if (!soundEnabled) return;
+  ensureAudioCtx();
+  const notes = [523, 659, 784, 1046];
+  notes.forEach((freq, i) => {
+    const start = audioCtx.currentTime + i * 0.07;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.12, start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.15);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(start);
+    osc.stop(start + 0.15);
+  });
+}
+
+// ---- 배경음(BGM): 절차적으로 생성되는 짧은 루프 ----
+
+const BGM_NOTES = [330, 392, 440, 392, 494, 440, 392, 330];
+const BGM_STEP_MS = 260;
+const BGM_STEP_MS_FEVER = 150;
+
+let soundEnabled = localStorage.getItem('promotionGameMuted') !== '1';
+let bgmTimer = null;
+let bgmStepIndex = 0;
+
+function playBgmNote(freq, durationSec) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = feverActive ? freq * 1.5 : freq;
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  const now = audioCtx.currentTime;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.05, now + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+  osc.start(now);
+  osc.stop(now + durationSec);
+}
+
+function scheduleBgmStep() {
+  if (!soundEnabled) { bgmTimer = null; return; }
+  ensureAudioCtx();
+  const stepMs = feverActive ? BGM_STEP_MS_FEVER : BGM_STEP_MS;
+  playBgmNote(BGM_NOTES[bgmStepIndex % BGM_NOTES.length], (stepMs / 1000) * 0.9);
+  bgmStepIndex++;
+  bgmTimer = setTimeout(scheduleBgmStep, stepMs);
+}
+
+function startBgm() {
+  if (bgmTimer || !soundEnabled) return;
+  scheduleBgmStep();
+}
+
+function stopBgm() {
+  clearTimeout(bgmTimer);
+  bgmTimer = null;
+}
+
+const muteBtn = document.getElementById('muteBtn');
+muteBtn.textContent = soundEnabled ? '🔊' : '🔇';
+muteBtn.addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('promotionGameMuted', soundEnabled ? '0' : '1');
+  muteBtn.textContent = soundEnabled ? '🔊' : '🔇';
+  if (soundEnabled) { ensureAudioCtx(); startBgm(); } else { stopBgm(); }
+});
+
+// ---- 콤보 / 피버타임 ----
+
+const COMBO_WINDOW_MS = 1300;
+const FEVER_MAX = 100;
+const FEVER_GAIN_BASE = 8;
+const FEVER_GAIN_PER_COMBO = 3;
+const FEVER_DURATION_MS = 12000;
+const FEVER_SCORE_MULT = 2;
+
+let comboCount = 0;
+let lastMergeTime = 0;
+let feverGauge = 0;
+let feverActive = false;
+let feverEndAt = 0;
+
+const feverWrap = document.getElementById('feverWrap');
+const feverFill = document.getElementById('feverFill');
+const feverLabel = document.getElementById('feverLabel');
+
+function computeCombo(prevCombo, now, lastTime) {
+  return (now - lastTime < COMBO_WINDOW_MS) ? prevCombo + 1 : 1;
+}
+
+function computeFeverGain(combo) {
+  return FEVER_GAIN_BASE + combo * FEVER_GAIN_PER_COMBO;
+}
+
+function updateFeverUI() {
+  feverFill.style.width = Math.min(100, (feverGauge / FEVER_MAX) * 100) + '%';
+  feverWrap.classList.toggle('active', feverActive);
+  feverLabel.textContent = feverActive ? '🔥 x2' : '피버';
+}
+
+function startFever() {
+  feverActive = true;
+  feverGauge = FEVER_MAX;
+  feverEndAt = performance.now() + FEVER_DURATION_MS;
+  updateFeverUI();
+  playFeverStartSound();
+}
+
+function updateFever() {
+  if (!feverActive) return;
+  const remainMs = feverEndAt - performance.now();
+  if (remainMs <= 0) {
+    feverActive = false;
+    feverGauge = 0;
+  } else {
+    feverGauge = (remainMs / FEVER_DURATION_MS) * FEVER_MAX;
+  }
+  updateFeverUI();
 }
 
 // ---- 병합 처리 ----
@@ -177,9 +357,22 @@ Events.on(engine, 'collisionStart', (evt) => {
     const newBody = makeBody(nt, mx, my);
     World.add(world, newBody);
     spawnMergeEffect(mx, my, TIERS[nt].color);
+    playMergeSound(nt);
 
-    score += scoreForMerge(nt);
+    const now = performance.now();
+    comboCount = computeCombo(comboCount, now, lastMergeTime);
+    lastMergeTime = now;
+
+    const gained = scoreForMerge(nt) * (feverActive ? FEVER_SCORE_MULT : 1);
+    score += gained;
     scoreEl.textContent = score;
+    spawnScorePopup(mx, my, gained, feverActive);
+
+    if (!feverActive) {
+      feverGauge = Math.min(FEVER_MAX, feverGauge + computeFeverGain(comboCount));
+      updateFeverUI();
+      if (feverGauge >= FEVER_MAX) startFever();
+    }
   }
 });
 
@@ -187,6 +380,11 @@ Events.on(engine, 'collisionStart', (evt) => {
 
 let particles = [];
 let rings = [];
+let scorePopups = [];
+
+function spawnScorePopup(x, y, amount, fever) {
+  scorePopups.push({ x, y, amount, fever, life: 1 });
+}
 
 function spawnMergeEffect(x, y, color) {
   const count = 14;
@@ -219,6 +417,11 @@ function updateEffects(dtMs) {
     r.r += (r.maxR - r.r) * 0.25 * dt;
     r.life -= 0.06 * dt;
   }
+  scorePopups = scorePopups.filter((s) => s.life > 0);
+  for (const s of scorePopups) {
+    s.y -= 0.9 * dt;
+    s.life -= 0.02 * dt;
+  }
 }
 
 function drawEffects(ctx2) {
@@ -236,6 +439,16 @@ function drawEffects(ctx2) {
     ctx2.beginPath();
     ctx2.arc(r.x, r.y, r.r, 0, Math.PI * 2);
     ctx2.stroke();
+  }
+  for (const s of scorePopups) {
+    ctx2.globalAlpha = Math.max(0, s.life);
+    ctx2.font = s.fever ? '800 18px -apple-system, sans-serif' : '700 14px -apple-system, sans-serif';
+    ctx2.fillStyle = s.fever ? '#FFD700' : '#ffffff';
+    ctx2.strokeStyle = 'rgba(0,0,0,0.45)';
+    ctx2.lineWidth = 3;
+    ctx2.textAlign = 'center';
+    ctx2.strokeText(`+${s.amount}`, s.x, s.y);
+    ctx2.fillText(`+${s.amount}`, s.x, s.y);
   }
   ctx2.globalAlpha = 1;
 }
@@ -276,6 +489,7 @@ function checkGameOver(dtMs) {
 function triggerGameOver() {
   gameOver = true;
   Runner.stop(runner);
+  stopBgm();
   if (score > best) {
     best = score;
     localStorage.setItem('promotionGameBest', String(best));
@@ -598,6 +812,7 @@ function loop(now) {
   if (!gameOver) {
     checkGameOver(dt);
     updateEffects(dt);
+    updateFever();
     render();
   }
   requestAnimationFrame(loop);
@@ -615,5 +830,9 @@ if (new URLSearchParams(location.search).get('test') === '1') {
   console.assert(nextTier(0) === 1, '인턴+인턴은 사원이 되어야 함');
   console.assert(radiusOf(0) < radiusOf(11), '상위 티어가 더 커야 함');
   console.assert(SCORE_TABLE.every((v, i) => i === 0 || v > SCORE_TABLE[i - 1]), '점수는 티어가 오를수록 커야 함');
+  console.assert(computeCombo(3, 1000, 500) === 4, '콤보 유지 시간 내 병합이면 콤보가 증가해야 함');
+  console.assert(computeCombo(3, 5000, 500) === 1, '콤보 유지 시간이 지나면 콤보가 리셋되어야 함');
+  console.assert(computeFeverGain(1) === FEVER_GAIN_BASE + FEVER_GAIN_PER_COMBO, '피버 게이지 증가량 계산이 맞아야 함');
+  console.assert(computeFeverGain(3) > computeFeverGain(1), '콤보가 높을수록 게이지가 더 많이 차야 함');
   console.log('[selfTest] 통과');
 }
